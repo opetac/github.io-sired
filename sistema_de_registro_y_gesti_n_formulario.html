@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma Inteligente de Registro</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- QRCode JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c7d2fe;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #818cf8;
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printSection, #printSection * {
+                visibility: visible;
+            }
+            #printSection {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col selection:bg-brand-500 selection:text-white">
+
+    <!-- Navbar Navigation -->
+    <header class="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+                    <i data-lucide="file-check-2" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-slate-900 leading-tight">RegistroSmart</h1>
+                    <p class="text-xs text-slate-500">Gestión e Inscripción Digital</p>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <nav class="flex items-center space-x-1 sm:space-x-2 bg-slate-100 p-1 rounded-xl">
+                <button onclick="switchTab('form')" id="tab-form" class="flex items-center space-x-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all duration-200 bg-white text-brand-700 shadow-sm">
+                    <i data-lucide="pen-tool" class="w-4 h-4"></i>
+                    <span>Nuevo Registro</span>
+                </button>
+                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="flex items-center space-x-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all duration-200 text-slate-600 hover:text-slate-900">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                    <span>Registros</span>
+                    <span id="badge-count" class="ml-1 px-1.5 py-0.5 text-xs bg-brand-100 text-brand-700 rounded-full font-bold">0</span>
+                </button>
+                <button onclick="switchTab('gform')" id="tab-gform" class="flex items-center space-x-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all duration-200 text-slate-600 hover:text-slate-900">
+                    <i data-lucide="external-link" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Enlace Google Form</span>
+                    <span class="sm:hidden">GForms</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 no-print">
+        
+        <!-- SECTION 1: FORM WIZARD VIEW -->
+        <section id="view-form" class="space-y-6">
+            <!-- Form Stepper Navigation Header -->
+            <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200/80">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="clipboard-list" class="text-brand-600 w-5 h-5"></i>
+                        Ficha Digital de Inscripción
+                    </h2>
+                    <span id="step-indicator" class="text-xs font-semibold uppercase tracking-wider text-brand-600 bg-brand-50 px-3 py-1 rounded-full border border-brand-100">
+                        Paso 1 de 5
+                    </span>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-6">
+                    <div id="progress-bar" class="bg-gradient-to-r from-brand-600 to-indigo-500 h-full w-1/5 transition-all duration-300"></div>
+                </div>
+
+                <!-- Step Tabs Desktop/Tablet -->
+                <div class="grid grid-cols-5 gap-2 text-center text-xs sm:text-sm">
+                    <div id="step-btn-1" class="step-tab flex flex-col items-center p-2 rounded-xl text-brand-600 bg-brand-50 font-medium">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center bg-brand-600 text-white font-bold mb-1 shadow-sm">1</div>
+                        <span class="hidden sm:block">Personales</span>
+                    </div>
+                    <div id="step-btn-2" class="step-tab flex flex-col items-center p-2 rounded-xl text-slate-400 font-medium">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center bg-slate-200 text-slate-600 font-bold mb-1">2</div>
+                        <span class="hidden sm:block">Contacto</span>
+                    </div>
+                    <div id="step-btn-3" class="step-tab flex flex-col items-center p-2 rounded-xl text-slate-400 font-medium">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center bg-slate-200 text-slate-600 font-bold mb-1">3</div>
+                        <span class="hidden sm:block">Detalles</span>
+                    </div>
+                    <div id="step-btn-4" class="step-tab flex flex-col items-center p-2 rounded-xl text-slate-400 font-medium">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center bg-slate-200 text-slate-600 font-bold mb-1">4</div>
+                        <span class="hidden sm:block">Preferencias</span>
+                    </div>
+                    <div id="step-btn-5" class="step-tab flex flex-col items-center p-2 rounded-xl text-slate-400 font-medium">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center bg-slate-200 text-slate-600 font-bold mb-1">5</div>
+                        <span class="hidden sm:block">Firma y Confirmación</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Body Wrapper -->
+            <form id="registrationForm" onsubmit="handleFormSubmit(event)" class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200/80 transition-all">
+                
+                <div id="step-content-1" class="step-content space-y-6">
+                    <div class="border-b border-slate-100 pb-4">
+                        <h3 class="text-lg font-bold text-slate-800">1. Datos Personales</h3>
+                        <p class="text-sm text-slate-500">Ingrese la información básica de identificación oficial.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Nombre Completo *</label>
+                            <input type="text" id="fullName" required placeholder="Ej. Ana María García López"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">CURP / DNI / Identificación *</label>
+                            <input type="text" id="idNumber" required placeholder="Ej. GALM900101HDFRR09"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm uppercase">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Fecha de Nacimiento *</label>
+                            <input type="date" id="birthDate" required
+                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Género *</label>
+                            <select id="gender" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm bg-white">
+                                <option value="">Seleccione una opción</option>
+                                <option value="Femenino">Femenino</option>
+                                <option value="Masculino">Masculino</option>
+                                <option value="No Binario">No Binario</option>
+                                <option value="Prefiero no decir">Prefiero no decir</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="step-content-2" class="step-content hidden space-y-6">
+                    <div class="border-b border-slate-100 pb-4">
+                        <h3 class="text-lg font-bold text-slate-800">2. Datos de Contacto</h3>
+                        <p class="text-sm text-slate-500">¿Cómo podemos comunicarnos y enviar confirmaciones?</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Correo Electrónico *</label>
+                            <input type="email" id="email" required placeholder="correo@ejemplo.com"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Teléfono Móvil / WhatsApp *</label>
+                            <input type="tel" id="phone" required placeholder="+52 55 1234 5678"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Dirección Completa *</label>
+                            <input type="text" id="address" required placeholder="Calle, número exterior/interior, colonia"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Ciudad / Municipio *</label>
+                            <input type="text" id="city" required placeholder="Ej. Ciudad de México / Monterrey"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Estado / Provincia *</label>
+                            <input type="text" id="state" required placeholder="Ej. Nuevo León / Jalisco"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="step-content-3" class="step-content hidden space-y-6">
+                    <div class="border-b border-slate-100 pb-4">
+                        <h3 class="text-lg font-bold text-slate-800">3. Detalles del Evento o Programa</h3>
+                        <p class="text-sm text-slate-500">Seleccione la categoría y modalidad de su participación.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Programa / Evento de Interés *</label>
+                            <select id="eventProgram" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm bg-white">
+                                <option value="">Seleccione el evento</option>
+                                <option value="Congreso Internacional de Tecnología 2026">Congreso Internacional de Tecnología 2026</option>
+                                <option value="Taller de Innovación y Diseño UX">Taller de Innovación y Diseño UX</option>
+                                <option value="Seminario de Inteligencia Artificial">Seminario de Inteligencia Artificial</option>
+                                <option value="Programa de Certificación Profesional">Programa de Certificación Profesional</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Tipo de Participante / Categoría *</label>
+                            <select id="category" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm bg-white">
+                                <option value="">Seleccione categoría</option>
+                                <option value="Estudiante">Estudiante / Académico</option>
+                                <option value="Profesional">Profesional / General</option>
+                                <option value="Ponente">Ponente / Conferencista</option>
+                                <option value="VIP">Invitado Especial / VIP</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Modalidad de Asistencia *</label>
+                            <div class="grid grid-cols-2 gap-4">
+                                <label class="border border-slate-200 rounded-xl p-3 flex items-center space-x-3 cursor-pointer hover:bg-slate-50 transition">
+                                    <input type="radio" name="modality" value="Presencial" checked class="text-brand-600 focus:ring-brand-500">
+                                    <span class="text-sm font-medium text-slate-700">Presencial</span>
+                                </label>
+                                <label class="border border-slate-200 rounded-xl p-3 flex items-center space-x-3 cursor-pointer hover:bg-slate-50 transition">
+                                    <input type="radio" name="modality" value="Virtual" class="text-brand-600 focus:ring-brand-500">
+                                    <span class="text-sm font-medium text-slate-700">Virtual</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Talla de Camiseta / Kit (Opcional)</label>
+                            <select id="shirtSize" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm bg-white">
+                                <option value="No Aplica">No aplica / Sin Kit</option>
+                                <option value="S">Chica (S)</option>
+                                <option value="M">Mediana (M)</option>
+                                <option value="L">Grande (L)</option>
+                                <option value="XL">Extra Grande (XL)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="step-content-4" class="step-content hidden space-y-6">
+                    <div class="border-b border-slate-100 pb-4">
+                        <h3 class="text-lg font-bold text-slate-800">4. Preferencias y Requerimientos Especiales</h3>
+                        <p class="text-sm text-slate-500">Ayúdenos a personalizar su experiencia durante el evento.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Restricciones Alimenticias</label>
+                            <select id="dietary" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm bg-white">
+                                <option value="Ninguna">Ninguna</option>
+                                <option value="Vegetariano">Vegetariano</option>
+                                <option value="Vegano">Vegano</option>
+                                <option value="Celíaco / Libre de Gluten">Celíaco / Gluten Free</option>
+                                <option value="Intolerante a Lactosa">Intolerante a la Lactosa</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Necesidades de Accesibilidad</label>
+                            <input type="text" id="accessibility" placeholder="Ej. Rampa de acceso, intérprete de señas..."
+                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Comentarios Adicionales o Notas</label>
+                            <textarea id="notes" rows="3" placeholder="Añada aquí cualquier observación importante..."
+                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm resize-none"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="step-content-5" class="step-content hidden space-y-6">
+                    <div class="border-b border-slate-100 pb-4">
+                        <h3 class="text-lg font-bold text-slate-800">5. Firma Digital y Consentimiento</h3>
+                        <p class="text-sm text-slate-500">Verifique los términos y firme digitalmente para autorizar el registro.</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-slate-600 max-h-32 overflow-y-auto leading-relaxed">
+                            <p class="font-bold mb-1">Aviso de Privacidad y Términos de Uso:</p>
+                            Al completar y firmar este formulario, usted manifiesta su consentimiento explícito para que los datos proporcionados sean recolectados, almacenados y procesados de acuerdo con nuestras políticas de protección de datos personales. Estos datos solo serán utilizados para la logística y comunicación directa del evento o programa seleccionado.
+                        </div>
+
+                        <div class="flex items-start space-x-3">
+                            <input type="checkbox" id="termsAccepted" required class="mt-1 rounded text-brand-600 focus:ring-brand-500 w-4 h-4">
+                            <label for="termsAccepted" class="text-sm text-slate-700">
+                                Declaro bajo protesta de decir verdad que toda la información ingresada es fidedigna y acepto los términos y condiciones. *
+                            </label>
+                        </div>
+
+                        <!-- Digital Canvas Signature -->
+                        <div class="pt-2">
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Firma Digital (Dibuje con su ratón o dedo) *</label>
+                                <button type="button" onclick="clearSignature()" class="text-xs text-rose-600 hover:text-rose-700 font-semibold flex items-center gap-1">
+                                    <i data-lucide="eraser" class="w-3.5 h-3.5"></i>
+                                    Limpiar Firma
+                                </button>
+                            </div>
+                            <div class="border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 overflow-hidden relative">
+                                <canvas id="signatureCanvas" class="w-full h-36 touch-none cursor-crosshair bg-white"></canvas>
+                                <div id="sigPlaceholder" class="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-400 text-xs italic">
+                                    Haga su firma aquí
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Controls -->
+                <div class="flex items-center justify-between pt-8 border-t border-slate-100 mt-8">
+                    <button type="button" id="prevBtn" onclick="changeStep(-1)" class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium text-sm transition hidden flex items-center gap-2">
+                        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                        Anterior
+                    </button>
+                    <div></div> <!-- Spacer -->
+                    <button type="button" id="nextBtn" onclick="changeStep(1)" class="px-6 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium text-sm transition shadow-md shadow-brand-500/20 flex items-center gap-2">
+                        Siguiente
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </button>
+                    <button type="submit" id="submitBtn" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm transition shadow-md shadow-emerald-500/20 hidden flex items-center gap-2">
+                        <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                        Completar y Generar Ficha
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- SECTION 2: RECORDS DASHBOARD VIEW -->
+        <section id="view-dashboard" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="database" class="w-5 h-5 text-brand-600"></i>
+                        Registros Guardados
+                    </h2>
+                    <p class="text-sm text-slate-500">Historial de datos recolectados en el almacenamiento local.</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button onclick="exportToCSV()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition flex items-center gap-2">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        Exportar CSV
+                    </button>
+                    <button onclick="clearAllData()" class="px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-sm font-medium transition flex items-center gap-2">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        Vaciar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Data Table Container -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
+                                <th class="p-4">Folio</th>
+                                <th class="p-4">Nombre</th>
+                                <th class="p-4">Contacto</th>
+                                <th class="p-4">Evento</th>
+                                <th class="p-4">Modalidad</th>
+                                <th class="p-4">Fecha Reg.</th>
+                                <th class="p-4 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recordsTableBody" class="divide-y divide-slate-100 text-sm">
+                            <!-- Rows injected via JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="noRecordsMsg" class="p-8 text-center text-slate-400 text-sm hidden">
+                    No se han registrado inscripciones en el sistema.
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: GOOGLE FORM DIRECT INTEGRATION -->
+        <section id="view-gform" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
+                        <i data-lucide="file-spreadsheet" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">Vinculación con Formulario Externo (Google Forms)</h2>
+                        <p class="text-xs text-slate-500">Complete los datos a través de la integración de Google Forms configurada.</p>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs leading-relaxed flex items-start gap-2">
+                    <i data-lucide="alert-triangle" class="w-5 h-5 shrink-0 text-amber-600"></i>
+                    <span><strong>Nota:</strong> Puede abrir directamente el Google Form en una nueva pestaña o interactuar mediante el visor integrado a continuación.</span>
+                </div>
+
+                <div class="flex flex-wrap gap-3 pt-2">
+                    <a href="https://docs.google.com/forms/d/e/1FAIpQLSfv44_kYgYkUqzU9vSwRELuhdhRS69SjGNrkEBLEjvpSOxNvA/viewform" target="_blank" class="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-medium text-sm rounded-xl transition flex items-center gap-2 shadow-sm">
+                        <i data-lucide="external-link" class="w-4 h-4"></i>
+                        Abrir Formulario en Google Forms
+                    </a>
+                </div>
+            </div>
+
+            <!-- Form Frame Container -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden min-h-[600px] flex flex-col">
+                <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSfv44_kYgYkUqzU9vSwRELuhdhRS69SjGNrkEBLEjvpSOxNvA/viewform?embedded=true" class="w-full flex-grow border-0 min-h-[600px]">Cargando...</iframe>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- PREVIEW / PRINTABLE SUMMARY MODAL -->
+    <div id="printModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto no-print">
+        <div class="bg-white w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden my-8 max-h-[90vh] flex flex-col">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+                <h3 class="font-bold text-base flex items-center gap-2">
+                    <i data-lucide="printer" class="w-5 h-5 text-brand-500"></i>
+                    Ficha de Inscripción Registrada
+                </h3>
+                <button onclick="closePrintModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Modal Printable Area Container -->
+            <div class="p-8 overflow-y-auto custom-scrollbar flex-grow bg-slate-50" id="printSection">
+                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+                    <!-- Voucher Header -->
+                    <div class="flex justify-between items-start border-b border-slate-200 pb-6">
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-8 h-8 rounded-lg bg-brand-600 text-white flex items-center justify-center font-bold text-sm">RS</div>
+                                <h2 class="text-xl font-bold text-slate-900">COMPROBANTE DE REGISTRO</h2>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1">Folio Oficial de Verificación</p>
+                            <p id="summaryFolio" class="text-sm font-mono font-bold text-brand-600 mt-1">#REG-000000</p>
+                        </div>
+                        <div id="qrcode" class="p-2 bg-white border border-slate-200 rounded-xl"></div>
+                    </div>
+
+                    <!-- Summary Grid Details -->
+                    <div class="grid grid-cols-2 gap-6 text-xs">
+                        <div class="space-y-3">
+                            <h4 class="font-bold uppercase tracking-wider text-slate-400 text-[10px]">Información del Participante</h4>
+                            <p><span class="text-slate-500">Nombre:</span> <br><strong id="sumName" class="text-slate-800 text-sm"></strong></p>
+                            <p><span class="text-slate-500">ID / CURP:</span> <br><strong id="sumId" class="text-slate-800"></strong></p>
+                            <p><span class="text-slate-500">Fecha de Nacimiento:</span> <br><strong id="sumBirth" class="text-slate-800"></strong></p>
+                            <p><span class="text-slate-500">Género:</span> <br><strong id="sumGender" class="text-slate-800"></strong></p>
+                        </div>
+                        <div class="space-y-3">
+                            <h4 class="font-bold uppercase tracking-wider text-slate-400 text-[10px]">Datos de Contacto</h4>
+                            <p><span class="text-slate-500">Email:</span> <br><strong id="sumEmail" class="text-slate-800"></strong></p>
+                            <p><span class="text-slate-500">Teléfono:</span> <br><strong id="sumPhone" class="text-slate-800"></strong></p>
+                            <p><span class="text-slate-500">Ubicación:</span> <br><strong id="sumLocation" class="text-slate-800"></strong></p>
+                            <p><span class="text-slate-500">Dirección:</span> <br><strong id="sumAddress" class="text-slate-800"></strong></p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-6 text-xs border-t border-slate-100 pt-4">
+                        <div class="space-y-3">
+                            <h4 class="font-bold uppercase tracking-wider text-slate-400 text-[10px]">Programa y Asistencia</h4>
+                            <p><span class="text-slate-500">Evento:</span> <br><strong id="sumEvent" class="text-brand-700 text-sm"></strong></p>
+                            <p><span class="text-slate-500">Categoría:</span> <br><strong id="sumCategory" class="text-slate-800"></strong></p>
+                            <p><span class="text-slate-500">Modalidad:</span> <br><strong id="sumModality" class="text-slate-800"></strong></p>
+                        </div>
+                        <div class="space-y-3">
+                            <h4 class="font-bold uppercase tracking-wider text-slate-400 text-[10px]">Requerimientos y Kit</h4>
+                            <p><span class="text-slate-500">Talla Camiseta:</span> <br><strong id="sumShirt" class="text-slate-800"></strong></p>
+                            <p><span class="text-slate-500">Dieta / Accesibilidad:</span> <br><strong id="sumReqs" class="text-slate-800"></strong></p>
+                        </div>
+                    </div>
+
+                    <!-- Signature Box -->
+                    <div class="border-t border-slate-100 pt-6 flex justify-between items-end">
+                        <div>
+                            <p class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Fecha de Emisión</p>
+                            <p id="sumRegDate" class="text-xs text-slate-700 font-medium"></p>
+                        </div>
+                        <div class="text-center space-y-1">
+                            <div class="border-b border-slate-300 w-48 h-16 flex items-center justify-center p-1">
+                                <img id="sumSigImage" class="max-h-full max-w-full object-contain" alt="Firma">
+                            </div>
+                            <p class="text-[10px] text-slate-500 font-medium">Firma Digital Registrada</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer Controls -->
+            <div class="px-6 py-4 bg-slate-100 border-t border-slate-200 flex items-center justify-between">
+                <span class="text-xs text-slate-500">Documento de confirmación generado automáticamente.</span>
+                <div class="flex space-x-3">
+                    <button onclick="closePrintModal()" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-200 text-xs font-semibold">
+                        Cerrar
+                    </button>
+                    <button onclick="window.print()" class="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold flex items-center gap-2 shadow-sm">
+                        <i data-lucide="printer" class="w-4 h-4"></i>
+                        Imprimir / Guardar PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Message Container -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center space-x-3 border border-slate-700">
+        <i id="toastIcon" data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+        <span id="toastMsg" class="text-sm font-medium">Operación completada</span>
+    </div>
+
+    <script>
+        // Global State Variables
+        let currentStep = 1;
+        const totalSteps = 5;
+        let isDrawing = false;
+        let canvas, ctx;
+        let records = [];
+
+        // Application Initialization
+        window.onload = function () {
+            lucide.createIcons();
+            setupCanvas();
+            loadRecords();
+            updateBadge();
+        };
+
+        // Navigation between App View Tabs
+        function switchTab(tabName) {
+            document.getElementById('view-form').classList.add('hidden');
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-gform').classList.add('hidden');
+
+            document.getElementById('tab-form').className = "flex items-center space-x-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all duration-200 text-slate-600 hover:text-slate-900";
+            document.getElementById('tab-dashboard').className = "flex items-center space-x-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all duration-200 text-slate-600 hover:text-slate-900";
+            document.getElementById('tab-gform').className = "flex items-center space-x-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all duration-200 text-slate-600 hover:text-slate-900";
+
+            document.getElementById(`view-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).className = "flex items-center space-x-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all duration-200 bg-white text-brand-700 shadow-sm";
+
+            if(tabName === 'dashboard') {
+                renderRecordsTable();
+            }
+        }
+
+        // Stepper Navigation Handling
+        function changeStep(direction) {
+            if (direction === 1 && !validateCurrentStep()) {
+                showToast("Por favor complete todos los campos requeridos del paso actual.", "error");
+                return;
+            }
+
+            const nextStep = currentStep + direction;
+            if (nextStep >= 1 && nextStep <= totalSteps) {
+                document.getElementById(`step-content-${currentStep}`).classList.add('hidden');
+                currentStep = nextStep;
+                document.getElementById(`step-content-${currentStep}`).classList.remove('hidden');
+                updateStepperUI();
+            }
+        }
+
+        function updateStepperUI() {
+            document.getElementById('step-indicator').innerText = `Paso ${currentStep} de ${totalSteps}`;
+            document.getElementById('progress-bar').style.width = `${(currentStep / totalSteps) * 100}%`;
+
+            for (let i = 1; i <= totalSteps; i++) {
+                const btn = document.getElementById(`step-btn-${i}`);
+                const numIcon = btn.querySelector('div');
+                if (i === currentStep) {
+                    btn.className = "step-tab flex flex-col items-center p-2 rounded-xl text-brand-600 bg-brand-50 font-medium";
+                    numIcon.className = "w-8 h-8 rounded-full flex items-center justify-center bg-brand-600 text-white font-bold mb-1 shadow-sm";
+                } else if (i < currentStep) {
+                    btn.className = "step-tab flex flex-col items-center p-2 rounded-xl text-emerald-600 font-medium";
+                    numIcon.className = "w-8 h-8 rounded-full flex items-center justify-center bg-emerald-500 text-white font-bold mb-1";
+                } else {
+                    btn.className = "step-tab flex flex-col items-center p-2 rounded-xl text-slate-400 font-medium";
+                    numIcon.className = "w-8 h-8 rounded-full flex items-center justify-center bg-slate-200 text-slate-600 font-bold mb-1";
+                }
+            }
+
+            // Button visibility
+            document.getElementById('prevBtn').classList.toggle('hidden', currentStep === 1);
+            document.getElementById('nextBtn').classList.toggle('hidden', currentStep === totalSteps);
+            document.getElementById('submitBtn').classList.toggle('hidden', currentStep !== totalSteps);
+        }
+
+        function validateCurrentStep() {
+            const currentContainer = document.getElementById(`step-content-${currentStep}`);
+            const requiredInputs = currentContainer.querySelectorAll('[required]');
+            for (let input of requiredInputs) {
+                if (input.type === 'checkbox' && !input.checked) return false;
+                if (input.value.trim() === '') return false;
+            }
+            return true;
+        }
+
+        // Digital Signature Canvas Operations
+        function setupCanvas() {
+            canvas = document.getElementById('signatureCanvas');
+            ctx = canvas.getContext('2d');
+            
+            // Adjust resolution for sharpness
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+
+            ctx.strokeStyle = "#1e293b";
+            ctx.lineWidth = 2.5;
+            ctx.lineCap = "round";
+
+            // Mouse Events
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseleave', stopDrawing);
+
+            // Touch Events for Mobile Adaptability
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent("mousedown", {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            });
+
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent("mousemove", {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            });
+
+            canvas.addEventListener('touchend', (e) => {
+                const mouseEvent = new MouseEvent("mouseup", {});
+                canvas.dispatchEvent(mouseEvent);
+            });
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            document.getElementById('sigPlaceholder').classList.add('hidden');
+            const rect = canvas.getBoundingClientRect();
+            ctx.beginPath();
+            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const rect = canvas.getBoundingClientRect();
+            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            ctx.stroke();
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function clearSignature() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('sigPlaceholder').classList.remove('hidden');
+        }
+
+        function isCanvasBlank(cvs) {
+            const pixelBuffer = new Uint32Array(
+                ctx.getImageData(0, 0, cvs.width, cvs.height).data.buffer
+            );
+            return !pixelBuffer.some(color => color !== 0);
+        }
+
+        // Form Submit Handler
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            if (isCanvasBlank(canvas)) {
+                showToast("Por favor dibuje su firma digital antes de enviar.", "error");
+                return;
+            }
+
+            const folio = 'REG-' + Math.floor(100000 + Math.random() * 900000);
+            const regDate = new Date().toLocaleString();
+
+            const formData = {
+                folio: folio,
+                date: regDate,
+                fullName: document.getElementById('fullName').value,
+                idNumber: document.getElementById('idNumber').value,
+                birthDate: document.getElementById('birthDate').value,
+                gender: document.getElementById('gender').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                address: document.getElementById('address').value,
+                city: document.getElementById('city').value,
+                state: document.getElementById('state').value,
+                eventProgram: document.getElementById('eventProgram').value,
+                category: document.getElementById('category').value,
+                modality: document.querySelector('input[name="modality"]:checked').value,
+                shirtSize: document.getElementById('shirtSize').value,
+                dietary: document.getElementById('dietary').value,
+                accessibility: document.getElementById('accessibility').value || 'Ninguna',
+                notes: document.getElementById('notes').value || 'N/A',
+                signature: canvas.toDataURL()
+            };
+
+            // Save in LocalStorage
+            records.push(formData);
+            localStorage.setItem('registros_smart_data', JSON.stringify(records));
+
+            updateBadge();
+            showToast("¡Registro completado e inscrito exitosamente!");
+            
+            // Open Summary Voucher
+            openPrintModal(formData);
+
+            // Reset Form Wizard
+            document.getElementById('registrationForm').reset();
+            clearSignature();
+            currentStep = 1;
+            document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById('step-content-1').classList.remove('hidden');
+            updateStepperUI();
+        }
+
+        // Storage Operations
+        function loadRecords() {
+            const saved = localStorage.getItem('registros_smart_data');
+            if (saved) {
+                try {
+                    records = JSON.parse(saved);
+                } catch (err) {
+                    records = [];
+                }
+            }
+        }
+
+        function updateBadge() {
+            document.getElementById('badge-count').innerText = records.length;
+        }
+
+        function renderRecordsTable() {
+            const tbody = document.getElementById('recordsTableBody');
+            const noData = document.getElementById('noRecordsMsg');
+            tbody.innerHTML = '';
+
+            if (records.length === 0) {
+                noData.classList.remove('hidden');
+                return;
+            }
+            noData.classList.add('hidden');
+
+            records.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition";
+                tr.innerHTML = `
+                    <td class="p-4 font-mono text-xs font-bold text-brand-600">${item.folio}</td>
+                    <td class="p-4 font-medium text-slate-800">${item.fullName}</td>
+                    <td class="p-4 text-xs text-slate-600">
+                        <div>${item.email}</div>
+                        <div class="text-slate-400">${item.phone}</div>
+                    </td>
+                    <td class="p-4 text-xs text-slate-700">${item.eventProgram}</td>
+                    <td class="p-4">
+                        <span class="px-2 py-1 rounded-full text-[10px] font-bold ${item.modality === 'Presencial' ? 'bg-emerald-100 text-emerald-700' : 'bg-purple-100 text-purple-700'}">
+                            ${item.modality}
+                        </span>
+                    </td>
+                    <td class="p-4 text-xs text-slate-500">${item.date}</td>
+                    <td class="p-4 text-center">
+                        <div class="flex items-center justify-center space-x-2">
+                            <button onclick="viewRecordDetail(${index})" class="p-1.5 hover:bg-slate-200 rounded-lg text-slate-600" title="Ver Ficha">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="deleteRecord(${index})" class="p-1.5 hover:bg-rose-100 rounded-lg text-rose-600" title="Eliminar">
+                                <i data-lucide="trash" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        function viewRecordDetail(index) {
+            openPrintModal(records[index]);
+        }
+
+        function deleteRecord(index) {
+            if (confirm("¿Está seguro de que desea eliminar este registro?")) {
+                records.splice(index, 1);
+                localStorage.setItem('registros_smart_data', JSON.stringify(records));
+                renderRecordsTable();
+                updateBadge();
+                showToast("Registro eliminado con éxito.");
+            }
+        }
+
+        function clearAllData() {
+            if (confirm("¿Desea borrar todos los registros almacenados localmente?")) {
+                records = [];
+                localStorage.removeItem('registros_smart_data');
+                renderRecordsTable();
+                updateBadge();
+                showToast("Todos los registros han sido borrados.");
+            }
+        }
+
+        // Modal Operations and Voucher Generation
+        function openPrintModal(data) {
+            document.getElementById('summaryFolio').innerText = `#${data.folio}`;
+            document.getElementById('sumName').innerText = data.fullName;
+            document.getElementById('sumId').innerText = data.idNumber;
+            document.getElementById('sumBirth').innerText = data.birthDate;
+            document.getElementById('sumGender').innerText = data.gender;
+            document.getElementById('sumEmail').innerText = data.email;
+            document.getElementById('sumPhone').innerText = data.phone;
+            document.getElementById('sumLocation').innerText = `${data.city}, ${data.state}`;
+            document.getElementById('sumAddress').innerText = data.address;
+            document.getElementById('sumEvent').innerText = data.eventProgram;
+            document.getElementById('sumCategory').innerText = data.category;
+            document.getElementById('sumModality').innerText = data.modality;
+            document.getElementById('sumShirt').innerText = data.shirtSize;
+            document.getElementById('sumReqs').innerText = `Dieta: ${data.dietary} | Acc: ${data.accessibility}`;
+            document.getElementById('sumRegDate').innerText = data.date;
+            document.getElementById('sumSigImage').src = data.signature;
+
+            // Generate QR Code
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+            new QRCode(qrContainer, {
+                text: `VERIFY:${data.folio}|${data.idNumber}|${data.fullName}`,
+                width: 80,
+                height: 80
+            });
+
+            document.getElementById('printModal').classList.remove('hidden');
+        }
+
+        function closePrintModal() {
+            document.getElementById('printModal').classList.add('hidden');
+        }
+
+        // CSV Export Tool
+        function exportToCSV() {
+            if (records.length === 0) {
+                showToast("No hay registros disponibles para exportar.", "error");
+                return;
+            }
+
+            const headers = ["Folio", "Fecha", "Nombre", "ID_CURP", "Email", "Telefono", "Ciudad", "Estado", "Evento", "Categoria", "Modalidad"];
+            const rows = records.map(r => [
+                `"${r.folio}"`,
+                `"${r.date}"`,
+                `"${r.fullName}"`,
+                `"${r.idNumber}"`,
+                `"${r.email}"`,
+                `"${r.phone}"`,
+                `"${r.city}"`,
+                `"${r.state}"`,
+                `"${r.eventProgram}"`,
+                `"${r.category}"`,
+                `"${r.modality}"`
+            ]);
+
+            const csvContent = "data:text/csv;charset=utf-8," 
+                + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Registros_Inscritos_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("Descarga de CSV iniciada.");
+        }
+
+        // Toast Messages Helper
+        function showToast(message, type = "success") {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.innerText = message;
+            if (type === "error") {
+                toastIcon.setAttribute('data-lucide', 'alert-circle');
+                toastIcon.className = "w-5 h-5 text-rose-400";
+            } else {
+                toastIcon.setAttribute('data-lucide', 'check-circle');
+                toastIcon.className = "w-5 h-5 text-emerald-400";
+            }
+            lucide.createIcons();
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
